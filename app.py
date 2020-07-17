@@ -79,7 +79,6 @@ def get_books_return_date(service, user, msgId):
 
 
 def get_calendar_service():
-
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -116,8 +115,14 @@ def create_cal_event(service, furtureDate, nextDay):
         },
     }
 
-    event = service.events().insert(calendarId='primary', body=event).execute()
-    print(event.get('htmlLink'))
+    return service.events().insert(calendarId='primary', body=event).execute()
+
+
+def trash_message(service, user, msgId):
+    try:
+        service.users().messages().trash(userId=user, id=msgId).execute()
+    except errors.HttpError:
+        print("An error occured while trashing message")
 
 
 gmail_service = get_gmail_service()
@@ -137,5 +142,9 @@ if message_id != None:
     nextDay = future_return_date + datetime.timedelta(days=1)
 
     # Create calendar event
-    create_cal_event(calender_service, str(
+    event = create_cal_event(calender_service, str(
         future_return_date.isoformat()), str(nextDay.isoformat()))
+
+    # Delete message if an event has been created
+    if event != None:
+        trash_message(gmail_service, 'me', message_id)
